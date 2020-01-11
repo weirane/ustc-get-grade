@@ -1,0 +1,31 @@
+[package]
+name = "ustc-get-grade"
+version = "0.0.1"
+authors = ["Wang Ruochen <wangkevin920@163.com>"]
+edition = "2018"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["cli"]
+
+cli = ["env_logger", "anyhow", "toml", "lettre", "blocking"]
+blocking = ["tokio"]
+
+[dependencies]
+futures = "0.3"
+reqwest = { version = "0.10", features = ["cookies", "json"] }
+
+log = "0.4"
+thiserror = "1.0"
+itertools = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+env_logger = { version = "0.7", optional = true }
+anyhow = { version = "1.0", optional = true }
+toml = { version = "0.5", optional = true }
+clap = { version = "2.33", optional = true }
+lettre = { version = "0.9", optional = true }
+tokio = { version = "0.2", features = ["rt-core"], optional = true }
