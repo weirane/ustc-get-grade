@@ -1,6 +1,7 @@
 #![cfg(feature = "cli")]
 
 use anyhow::{Context, Result};
+use itertools::Itertools;
 use log::{error, info};
 use serde::Deserialize;
 use std::fs::File;
@@ -67,8 +68,43 @@ fn run() -> Result<()> {
 }
 
 fn format_grade(grade: &Grade) -> String {
-    // TODO: better formating
-    format!("{:?}", grade)
+    let preface = format!(
+        "<p>Total GPA: {:.2}<br />
+        Semester GPA: {:.2}<br />
+        Credits earned: {:.1}<br /></p>",
+        grade.gpa, grade.sem_gpa, grade.credits,
+    );
+
+    let mut grades = String::new();
+    for (name, courses) in grade.scores.iter() {
+        let content = courses
+            .iter()
+            .map(|(n, g, c)| {
+                format!(
+                    r#"<tr>
+                    <td align="center">{}</td>
+                    <td align="center">{}</td>
+                    <td align="center">{}</td>
+                    </tr>"#,
+                    n, g, c,
+                )
+            })
+            .join("");
+        grades += &format!(
+            "<h4>{}</h4>
+            <table>
+              <tr>
+                <th>&nbsp;课程&nbsp;</th>
+                <th>&nbsp;成绩&nbsp;</th>
+                <th>&nbsp;学分&nbsp;</th>
+              </tr>
+              {}
+            </table>",
+            name, content
+        );
+    }
+
+    preface + &grades
 }
 
 fn send_email(config: &Mail, subject: impl Into<String>, message: impl Into<String>) -> Result<()> {

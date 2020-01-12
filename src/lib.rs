@@ -26,7 +26,7 @@ pub struct Grade {
     pub sem_gpa: f64,
 
     /// All the credits earned
-    pub credits: u64,
+    pub credits: f64,
 
     /// Scores of selected semesters
     pub scores: Vec<(String, SemesterGrade)>,
@@ -110,7 +110,7 @@ fn extract_grade(all: String, sem: String, sem_map: HashMap<usize, String>) -> O
     let overview = all.get("overview")?;
     let gpa = overview.get("gpa")?.as_f64()?;
     let sem_gpa = sem.get("overview")?.get("gpa")?.as_f64()?;
-    let credits = overview.get("passedCredits")?.as_u64()?;
+    let credits = overview.get("passedCredits")?.as_f64()?;
 
     let mut scores = Vec::new();
     for s in sem.get("semesters")?.as_array()? {

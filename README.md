@@ -1,7 +1,7 @@
 # USTC Get Grade
 自动从 USTC 新教务系统中获取成绩并利用邮件通知。
 
-### 运行（TODO）
+### 运行
 Rust 版本要求：1.39+。[安装方法](https://rustup.rs/)
 
 ```sh
