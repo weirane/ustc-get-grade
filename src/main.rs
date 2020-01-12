@@ -1,6 +1,7 @@
 #![cfg(feature = "cli")]
 
 use anyhow::{Context, Result};
+use clap::{App, Arg};
 use itertools::Itertools;
 use log::{error, info};
 use serde::Deserialize;
@@ -35,9 +36,22 @@ struct Ustc {
 }
 
 fn run() -> Result<()> {
-    info!("App started");
+    let options = App::new(env!("CARGO_PKG_NAME"))
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .help("Sets a custom config file")
+                .takes_value(true),
+        )
+        .get_matches();
 
-    let mut config = File::open("config.toml").with_context(|| "Cannot find configuration file")?;
+    let conf = options.value_of("config").unwrap_or("config.toml");
+    let mut config =
+        File::open(conf).with_context(|| format!("Cannot find configuration file `{}'", conf))?;
     let mut buf = String::new();
     config.read_to_string(&mut buf)?;
     let config: Config = toml::from_str(&buf)?;
@@ -47,6 +61,8 @@ fn run() -> Result<()> {
         config.ustc.interval
     );
     let semesters: Vec<_> = config.ustc.semesters.iter().map(|s| s.as_str()).collect();
+
+    info!("App started");
 
     let mut old_grade = get_grade(&config.ustc.username, &config.ustc.password, &semesters)?;
 

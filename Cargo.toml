@@ -10,7 +10,7 @@ readme = "README.md"
 [features]
 default = ["cli"]
 
-cli = ["env_logger", "anyhow", "toml", "lettre", "lettre_email", "blocking"]
+cli = ["env_logger", "anyhow", "toml", "clap", "lettre", "lettre_email", "blocking"]
 blocking = ["tokio"]
 
 [dependencies]
