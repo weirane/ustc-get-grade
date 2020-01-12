@@ -9,6 +9,8 @@ const UA: &'static str = "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/2010010
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("Jiaowu login failed")]
+    JWLoginFailed,
     #[error("Grade is malformed")]
     GradeMalformed,
     #[error("ReqwestError: {0}")]
@@ -60,11 +62,14 @@ pub async fn get_grade(user: &str, passwd: &str, semesters: &[&str]) -> Result<G
         ("button", ""),
     ];
 
-    client
+    let res = client
         .post("https://passport.ustc.edu.cn/login")
         .form(&data)
         .send()
         .await?;
+    if !res.url().as_str().contains("/home") {
+        return Err(Error::JWLoginFailed);
+    }
     info!("Logined");
 
     // Get semesters
