@@ -5,7 +5,7 @@ use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
 
-const UA: &'static str = "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0";
+const UA: &str = "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0";
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
