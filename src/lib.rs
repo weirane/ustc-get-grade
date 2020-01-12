@@ -1,3 +1,4 @@
+use futures::future::try_join;
 use itertools::Itertools;
 use log::info;
 use reqwest::Client;
@@ -89,12 +90,12 @@ pub async fn get_grade(user: &str, passwd: &str, semesters: &[&str]) -> Result<G
         .query(&[("trainTypeId", "1"), ("semesterIds", &ids)])
         .send();
 
-    let (all, sem) = futures::join!(all, sem);
-    let (all, sem) = futures::join!(all?.text(), sem?.text());
+    let (all, sem) = try_join(all, sem).await?;
+    let (all, sem) = try_join(all.text(), sem.text()).await?;
     info!("Grade get");
 
     let sem_map = sems.iter().map(|s| (s.id, s.nameZh.clone())).collect();
-    extract_grade(all?, sem?, sem_map).ok_or(Error::GradeMalformed)
+    extract_grade(all, sem, sem_map).ok_or(Error::GradeMalformed)
 }
 
 fn extract_grade(all: String, sem: String, sem_map: HashMap<usize, String>) -> Option<Grade> {
