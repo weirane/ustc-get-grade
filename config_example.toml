@@ -1,0 +1,12 @@
+[mail]
+username = "abc@example.com"
+password = "passw0rd"
+server = "smtp.example.com"
+sendto = []
+send_first = false              # 是否在第一次查询后发送邮件
+
+[ustc]
+username = "PB00000000"         # 学号
+password = "p@ssword"           # 密码
+semesters = ["2019年秋季学期"]  # 要查询的学期，格式为 "YYYY年(春|夏|秋)季学期"
+interval = 60                   # 轮询间隔（分钟）

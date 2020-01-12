@@ -17,7 +17,7 @@ pub enum Error {
     ReqwestError(#[from] reqwest::Error),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Grade {
     /// Overall GPA
     pub gpa: f64,
