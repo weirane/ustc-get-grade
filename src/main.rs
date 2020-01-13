@@ -74,10 +74,19 @@ fn run() -> Result<()> {
         info!("Sleep for {:.1} minutes", config.ustc.interval);
         thread::sleep(Duration::from_secs_f64(60. * config.ustc.interval));
 
-        let grade = get_grade(&config.ustc.username, &config.ustc.password, &semesters)?;
+        let grade = match get_grade(&config.ustc.username, &config.ustc.password, &semesters) {
+            Ok(g) => g,
+            Err(e) => {
+                error!("Get grade failed: {}", e);
+                continue;
+            }
+        };
         if old_grade != grade {
             info!("New grade detected");
-            send_email(&config.mail, "Grade Report", format_grade(&grade))?;
+            if let Err(e) = send_email(&config.mail, "Grade Report", format_grade(&grade)) {
+                error!("Send email failed: {}", e);
+                continue;
+            }
             old_grade = grade;
         }
     }
