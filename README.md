@@ -14,7 +14,6 @@ cargo run --release
 在 `Cargo.toml` 中加入
 ```toml
 [dependencies.ustc-get-grade]
-version = "0.0.1"
 git = "https://github.com/weirane/ustc-get-grade"
 default-features = false
 ```
