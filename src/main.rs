@@ -35,7 +35,7 @@ struct Ustc {
     interval: f64,
 }
 
-fn run() -> Result<()> {
+fn get_config() -> Result<Config> {
     let options = App::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -60,6 +60,11 @@ fn run() -> Result<()> {
         "Interval {} is too small, should >= 10.",
         config.ustc.interval
     );
+
+    Ok(config)
+}
+
+fn run(config: &Config) -> Result<()> {
     let semesters: Vec<_> = config.ustc.semesters.iter().map(|s| s.as_str()).collect();
 
     info!("App started");
@@ -78,6 +83,11 @@ fn run() -> Result<()> {
             Ok(g) => g,
             Err(e) => {
                 error!("Get grade failed: {}", e);
+                send_email(
+                    &config.mail,
+                    "Get Grade Error",
+                    format!("Get grade failed: {}", e),
+                )?;
                 continue;
             }
         };
@@ -85,6 +95,11 @@ fn run() -> Result<()> {
             info!("New grade detected");
             if let Err(e) = send_email(&config.mail, "Grade Report", format_grade(&grade)) {
                 error!("Send email failed: {}", e);
+                send_email(
+                    &config.mail,
+                    "Get Grade Error",
+                    format!("Send email failed: {}", e),
+                )?;
                 continue;
             }
             old_grade = grade;
@@ -162,8 +177,14 @@ fn send_email(config: &Mail, subject: impl Into<String>, message: impl Into<Stri
 fn main() {
     env_logger::init();
 
-    if let Err(e) = run() {
+    let config = get_config().unwrap_or_else(|e| {
+        error!("Config error: {}", e);
+        std::process::exit(1);
+    });
+
+    if let Err(e) = run(&config) {
         error!("{}", e);
+        send_email(&config.mail, "Get Grade Error", format!("{}", e)).unwrap();
         std::process::exit(1);
     }
 }
