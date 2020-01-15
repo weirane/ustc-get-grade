@@ -23,8 +23,6 @@ struct Mail {
     password: String,
     server: String,
     sendto: Vec<String>,
-    #[serde(default)]
-    send_first: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -33,6 +31,8 @@ struct Ustc {
     password: String,
     semesters: Vec<String>,
     interval: f64,
+    #[serde(default)]
+    send_first: bool,
 }
 
 fn get_config() -> Result<Config> {
@@ -71,7 +71,7 @@ fn run(config: &Config) -> Result<()> {
 
     let mut old_grade = get_grade(&config.ustc.username, &config.ustc.password, &semesters)?;
 
-    if config.mail.send_first {
+    if config.ustc.send_first {
         send_email(&config.mail, "Grade Report", format_grade(&old_grade))?;
     }
 
