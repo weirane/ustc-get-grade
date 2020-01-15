@@ -7,6 +7,8 @@ use std::collections::HashMap;
 
 const UA: &str = "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0";
 
+/// Error type for [get_grade](fn.get_grade.html)
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Jiaowu login failed")]
@@ -17,6 +19,8 @@ pub enum Error {
     ReqwestError(#[from] reqwest::Error),
 }
 
+/// The grade
+#[non_exhaustive]
 #[derive(Debug, PartialEq)]
 pub struct Grade {
     /// Overall GPA
@@ -45,6 +49,7 @@ struct Semesters {
     current: bool,
 }
 
+/// Gets the grade of `user` in `semesters` from jw.ustc.edu.cn
 pub async fn get_grade(user: &str, passwd: &str, semesters: &[&str]) -> Result<Grade, Error> {
     let client = Client::builder()
         .user_agent(UA)
