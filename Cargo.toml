@@ -10,7 +10,7 @@ readme = "README.md"
 [features]
 default = ["cli"]
 
-cli = ["env_logger", "anyhow", "toml", "clap", "lettre", "lettre_email", "blocking"]
+cli = ["env_logger", "anyhow", "toml", "clap", "lettre", "lettre_email", "prettytable-rs", "blocking"]
 blocking = ["tokio"]
 
 [profile.dev]
@@ -35,4 +35,5 @@ toml = { version = "0.5", optional = true }
 clap = { version = "2.33", optional = true }
 lettre = { version = "0.9", optional = true }
 lettre_email = { version = "0.9", optional = true }
+prettytable-rs = { version = "0.8", optional = true }
 tokio = { version = "0.2", features = ["rt-core"], optional = true }

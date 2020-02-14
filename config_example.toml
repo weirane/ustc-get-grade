@@ -3,6 +3,7 @@ username = "abc@example.com"
 password = "passw0rd"
 server = "smtp.example.com"
 sendto = []
+html = true                     # 使用 HTML 格式发送邮件
 
 [ustc]
 username = "PB00000000"         # 学号

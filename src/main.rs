@@ -23,6 +23,8 @@ struct Mail {
     password: String,
     server: String,
     sendto: Vec<String>,
+    #[serde(default)]
+    html: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -72,7 +74,11 @@ fn run(config: &Config) -> Result<()> {
     let mut old_grade = get_grade(&config.ustc.username, &config.ustc.password, &semesters)?;
 
     if config.ustc.send_first {
-        send_email(&config.mail, "Grade Report", format_grade(&old_grade))?;
+        send_email(
+            &config.mail,
+            "Grade Report",
+            format_grade(&old_grade, config.mail.html),
+        )?;
     }
 
     loop {
@@ -93,7 +99,11 @@ fn run(config: &Config) -> Result<()> {
         };
         if old_grade != grade {
             info!("New grade detected");
-            if let Err(e) = send_email(&config.mail, "Grade Report", format_grade(&grade)) {
+            if let Err(e) = send_email(
+                &config.mail,
+                "Grade Report",
+                format_grade(&grade, config.mail.html),
+            ) {
                 error!("Send email failed: {}", e);
                 send_email(
                     &config.mail,
@@ -107,7 +117,15 @@ fn run(config: &Config) -> Result<()> {
     }
 }
 
-fn format_grade(grade: &Grade) -> String {
+fn format_grade(grade: &Grade, html: bool) -> String {
+    if html {
+        format_grade_html(&grade)
+    } else {
+        format_grade_text(&grade)
+    }
+}
+
+fn format_grade_html(grade: &Grade) -> String {
     let preface = format!(
         "<p>Total GPA: {:.2}<br />
         Semester GPA: {:.2}<br />
@@ -147,6 +165,29 @@ fn format_grade(grade: &Grade) -> String {
     preface + &grades
 }
 
+fn format_grade_text(grade: &Grade) -> String {
+    use prettytable::{cell, row, table};
+
+    let mut grades = String::new();
+    for (name, courses) in grade.scores.iter() {
+        let mut table = table!(["课程", "成绩", "学分"]);
+        for (n, g, c) in courses {
+            table.add_row(row![n, g, c]);
+        }
+        grades += &format!("{}\n{}", name, table);
+    }
+
+    format!(
+        "\
+Total GPA: {:.2}
+Semester GPA: {:.2}
+Credits earned: {:.1}
+
+{}",
+        grade.gpa, grade.sem_gpa, grade.credits, grades,
+    )
+}
+
 fn send_email(config: &Mail, subject: impl Into<String>, message: impl Into<String>) -> Result<()> {
     use lettre::smtp::authentication::Credentials;
     use lettre::{SmtpClient, Transport};
@@ -156,8 +197,12 @@ fn send_email(config: &Mail, subject: impl Into<String>, message: impl Into<Stri
 
     let mut email = Email::builder()
         .from(config.username.as_str())
-        .subject(subject)
-        .html(message);
+        .subject(subject);
+    email = if config.html {
+        email.html(message)
+    } else {
+        email.text(message)
+    };
     for to in config.sendto.iter() {
         email = email.to(to.as_str());
     }
