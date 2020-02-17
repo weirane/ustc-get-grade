@@ -1,4 +1,6 @@
 # USTC Get Grade
+[![dependency status](https://deps.rs/repo/github/weirane/ustc-get-grade/status.svg)](https://deps.rs/repo/github/weirane/ustc-get-grade)
+
 自动从 USTC 新教务系统中获取成绩并利用邮件通知。
 
 ### 运行
