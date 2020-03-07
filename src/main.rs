@@ -23,8 +23,6 @@ struct Mail {
     password: String,
     server: String,
     sendto: Vec<String>,
-    #[serde(default)]
-    html: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -35,6 +33,12 @@ struct Ustc {
     interval: f64,
     #[serde(default)]
     send_first: bool,
+}
+
+#[derive(Debug)]
+enum EmailContent {
+    Plain(String),
+    Alternative(String, String),
 }
 
 fn get_config() -> Result<Config> {
@@ -73,12 +77,10 @@ fn run(config: &Config) -> Result<()> {
 
     let mut old_grade = get_grade(&config.ustc.username, &config.ustc.password, &semesters)?;
 
+    let content =
+        EmailContent::Alternative(format_grade_text(&old_grade), format_grade_html(&old_grade));
     if config.ustc.send_first {
-        send_email(
-            &config.mail,
-            "Grade Report",
-            format_grade(&old_grade, config.mail.html),
-        )?;
+        send_email(&config.mail, "Grade Report", content)?;
     }
 
     loop {
@@ -92,36 +94,26 @@ fn run(config: &Config) -> Result<()> {
                 send_email(
                     &config.mail,
                     "Get Grade Error",
-                    format!("Get grade failed: {}", e),
+                    EmailContent::Plain(format!("Get grade failed: {}", e)),
                 )?;
                 continue;
             }
         };
         if old_grade != grade {
             info!("New grade detected");
-            if let Err(e) = send_email(
-                &config.mail,
-                "Grade Report",
-                format_grade(&grade, config.mail.html),
-            ) {
+            let content =
+                EmailContent::Alternative(format_grade_text(&grade), format_grade_html(&grade));
+            if let Err(e) = send_email(&config.mail, "Grade Report", content) {
                 error!("Send email failed: {}", e);
                 send_email(
                     &config.mail,
                     "Get Grade Error",
-                    format!("Send email failed: {}", e),
+                    EmailContent::Plain(format!("Send email failed: {}", e)),
                 )?;
                 continue;
             }
             old_grade = grade;
         }
-    }
-}
-
-fn format_grade(grade: &Grade, html: bool) -> String {
-    if html {
-        format_grade_html(&grade)
-    } else {
-        format_grade_text(&grade)
     }
 }
 
@@ -188,7 +180,7 @@ Credits earned: {:.1}
     )
 }
 
-fn send_email(config: &Mail, subject: impl Into<String>, message: impl Into<String>) -> Result<()> {
+fn send_email(config: &Mail, subject: impl Into<String>, content: EmailContent) -> Result<()> {
     use lettre::smtp::authentication::Credentials;
     use lettre::{SmtpClient, Transport};
     use lettre_email::Email;
@@ -198,10 +190,9 @@ fn send_email(config: &Mail, subject: impl Into<String>, message: impl Into<Stri
     let mut email = Email::builder()
         .from(config.username.as_str())
         .subject(subject);
-    email = if config.html {
-        email.html(message)
-    } else {
-        email.text(message)
+    email = match content {
+        EmailContent::Plain(t) => email.text(t),
+        EmailContent::Alternative(t, h) => email.alternative(h, t),
     };
     for to in config.sendto.iter() {
         email = email.to(to.as_str());
@@ -229,7 +220,12 @@ fn main() {
 
     if let Err(e) = run(&config) {
         error!("{}", e);
-        send_email(&config.mail, "Get Grade Error", format!("{}", e)).unwrap();
+        send_email(
+            &config.mail,
+            "Get Grade Error",
+            EmailContent::Plain(format!("{}", e)),
+        )
+        .unwrap();
         std::process::exit(1);
     }
 }
