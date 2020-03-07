@@ -12,6 +12,10 @@ $EDITOR config.toml
 cargo run --release
 ```
 
+关于配置文件 `config.toml`：其中的密码可以使用明文 `password = "foo"`，或者使用
+一个命令 `pass_exec = "command"`，此命令的 stdout 截去末尾的换行符将作为密码，可
+以配合 `gpg` 或其它密码管理器使用。此命令只在加载配置文件时执行一次。
+
 ### 做为一个库使用
 在 `Cargo.toml` 中加入
 ```toml

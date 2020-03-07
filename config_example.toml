@@ -1,6 +1,7 @@
 [mail]
 username = "abc@example.com"
 password = "passw0rd"
+# pass_exec = "gpg -d ~/.pass/mail.gpg"
 server = "smtp.example.com"
 sendto = []
 html = true                     # 使用 HTML 格式发送邮件
@@ -8,6 +9,7 @@ html = true                     # 使用 HTML 格式发送邮件
 [ustc]
 username = "PB00000000"         # 学号
 password = "p@ssword"           # 密码
+# pass_exec = "gpg -d ~/.pass/ustc.gpg"
 semesters = ["2019年秋季学期"]  # 要查询的学期，格式为 "YYYY年(春|夏|秋)季学期"
 interval = 60                   # 轮询间隔（分钟）
 send_first = false              # 是否在第一次查询后发送邮件

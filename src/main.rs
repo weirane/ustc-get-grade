@@ -20,19 +20,32 @@ struct Config {
 #[derive(Debug, Deserialize)]
 struct Mail {
     username: String,
-    password: String,
+    #[serde(flatten)]
+    password: Password,
     server: String,
     sendto: Vec<String>,
+    #[serde(skip_deserializing)]
+    pass_cache: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct Ustc {
     username: String,
-    password: String,
+    #[serde(flatten)]
+    password: Password,
     semesters: Vec<String>,
     interval: f64,
     #[serde(default)]
     send_first: bool,
+    #[serde(skip_deserializing)]
+    pass_cache: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum Password {
+    Plain { password: String },
+    Exec { pass_exec: String },
 }
 
 #[derive(Debug)]
@@ -60,14 +73,45 @@ fn get_config() -> Result<Config> {
         File::open(conf).with_context(|| format!("Cannot find configuration file `{}'", conf))?;
     let mut buf = String::new();
     config.read_to_string(&mut buf)?;
-    let config: Config = toml::from_str(&buf)?;
+    let mut config: Config = toml::from_str(&buf)?;
     anyhow::ensure!(
         config.ustc.interval >= 10.,
         "Interval {} is too small, should >= 10.",
         config.ustc.interval
     );
 
+    config.mail.pass_cache = match config.mail.password {
+        Password::Plain { ref password } => password.clone(),
+        Password::Exec { ref pass_exec } => get_output(&pass_exec),
+    };
+
+    config.ustc.pass_cache = match config.ustc.password {
+        Password::Plain { ref password } => password.clone(),
+        Password::Exec { ref pass_exec } => get_output(&pass_exec),
+    };
+
     Ok(config)
+}
+
+fn get_output(c: &str) -> String {
+    use std::process::Command;
+    let output = if cfg!(target_os = "windows") {
+        Command::new("cmd")
+            .arg("/C")
+            .arg(c)
+            .output()
+            .expect("failed to execute process")
+    } else {
+        Command::new("sh")
+            .arg("-c")
+            .arg(c)
+            .output()
+            .expect("failed to execute process")
+    };
+    String::from_utf8(output.stdout)
+        .expect("Invalid UTF-8 in output")
+        .trim_end_matches('\n')
+        .to_string()
 }
 
 fn run(config: &Config) -> Result<()> {
@@ -75,7 +119,7 @@ fn run(config: &Config) -> Result<()> {
 
     info!("App started");
 
-    let mut old_grade = get_grade(&config.ustc.username, &config.ustc.password, &semesters)?;
+    let mut old_grade = get_grade(&config.ustc.username, &config.ustc.pass_cache, &semesters)?;
 
     let content =
         EmailContent::Alternative(format_grade_text(&old_grade), format_grade_html(&old_grade));
@@ -87,7 +131,7 @@ fn run(config: &Config) -> Result<()> {
         info!("Sleep for {:.1} minutes", config.ustc.interval);
         thread::sleep(Duration::from_secs_f64(60. * config.ustc.interval));
 
-        let grade = match get_grade(&config.ustc.username, &config.ustc.password, &semesters) {
+        let grade = match get_grade(&config.ustc.username, &config.ustc.pass_cache, &semesters) {
             Ok(g) => g,
             Err(e) => {
                 error!("Get grade failed: {}", e);
@@ -199,7 +243,7 @@ fn send_email(config: &Mail, subject: impl Into<String>, content: EmailContent) 
     }
     let email = email.build()?;
 
-    let cred = Credentials::new(config.username.clone(), config.password.clone());
+    let cred = Credentials::new(config.username.clone(), config.pass_cache.clone());
     let mut mailer = SmtpClient::new_simple(config.server.as_str())?
         .credentials(cred)
         .transport();
